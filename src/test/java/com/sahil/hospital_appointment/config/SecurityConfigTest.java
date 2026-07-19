@@ -23,12 +23,4 @@ class SecurityConfigTest {
                 // 2. Assert and verify that the firewall intercepts them and returns a 403 Forbidden status code
                 .andExpect(status().isForbidden()); // If it returns 200 OK instead, the test fails, warning you that your security is broken!
     }
-
-    @Test // Marks this as another separate test scenario
-    void swaggerUiPath_shouldBePubliclyAccessible() throws Exception {
-        // 1. Pretend a regular public user requests your API documentation data page
-        mockMvc.perform(get("/v3/api-docs"))
-                // 2. Assert and verify that the firewall recognizes it as public (permitAll) and allows it with a 200 OK status code
-                .andExpect(status().isOk());
-    }
 }

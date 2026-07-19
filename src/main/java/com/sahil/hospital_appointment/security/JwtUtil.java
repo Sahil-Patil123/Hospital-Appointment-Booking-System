@@ -45,8 +45,6 @@ public class JwtUtil {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    // Generic claim extractor - lets us pull any field out of the token's
-    // payload using a function reference (e.g. Claims::getSubject)
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
@@ -64,8 +62,6 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    // Called by the filter on every request: is this token valid AND
-    // does it belong to the user making the request?
     public boolean validateToken(String token, UserDetails userDetails) {
         final String email = extractEmail(token);
         return email.equals(userDetails.getUsername()) && !isTokenExpired(token);

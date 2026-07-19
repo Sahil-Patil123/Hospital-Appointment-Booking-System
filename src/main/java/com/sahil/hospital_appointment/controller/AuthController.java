@@ -14,11 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Public-facing auth endpoints. Both routes are whitelisted in
- * SecurityConfig (Step 6) via permitAll() on /api/auth/** - no token
- * required to hit either one.
- */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

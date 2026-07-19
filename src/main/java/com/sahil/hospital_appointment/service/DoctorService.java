@@ -14,14 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
  import org.springframework.data.domain.Page;
  import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-
-/**
- * Business logic for Doctor CRUD. Role/ownership checks (is this MY
- * profile, am I an ADMIN) are enforced at the Controller layer via
- * @PreAuthorize - this Service assumes the caller is already authorized
- * and focuses purely on data operations.
- */
 @Service
 @RequiredArgsConstructor
 public class DoctorService {
@@ -30,11 +22,9 @@ public class DoctorService {
     private final DoctorMapper doctorMapper;
 
     @Transactional(readOnly = true)
-    public com.sahil.hospital_appointment.dto.PageResponse<DoctorResponse> getAllDoctors(
-            org.springframework.data.domain.Pageable pageable) {
-        org.springframework.data.domain.Page<DoctorResponse> page =
-                doctorRepository.findAll(pageable).map(doctorMapper::toResponse);
-        return com.sahil.hospital_appointment.dto.PageResponse.from(page);
+    public PageResponse<DoctorResponse> getAllDoctors(Pageable pageable) {
+        Page<DoctorResponse> page = doctorRepository.findAll(pageable).map(doctorMapper::toResponse);
+        return PageResponse.from(page);
     }
 
     @Transactional(readOnly = true)
@@ -63,16 +53,12 @@ public class DoctorService {
         doctorRepository.delete(doctor);
     }
 
-    // Used by other Services (e.g. AppointmentService in Step 12) that
-    // need the raw entity, not the response DTO
     @Transactional(readOnly = true)
     public Doctor findDoctorOrThrow(Long id) {
         return doctorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", id));
     }
 
-    // Used for authorization checks in the Controller: "does this doctor
-    // record belong to the currently logged-in user?"
     @Transactional(readOnly = true)
     public boolean isOwner(Long doctorId, String currentUserEmail) {
         return doctorRepository.findById(doctorId)
@@ -80,10 +66,8 @@ public class DoctorService {
                 .orElse(false);
     }
 
-
     @Transactional(readOnly = true)
-    public PageResponse<DoctorResponse> searchDoctors(
-            String specialization, Integer minExperience, Double maxFee, Pageable pageable) {
+    public PageResponse<DoctorResponse> searchDoctors(String specialization, Integer minExperience, Double maxFee, Pageable pageable) {
         var spec = DoctorSpecification.buildSearchSpecification(specialization, minExperience, maxFee);
         Page<DoctorResponse> page = doctorRepository.findAll(spec, pageable).map(doctorMapper::toResponse);
         return PageResponse.from(page);

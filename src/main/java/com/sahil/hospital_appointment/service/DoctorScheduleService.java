@@ -14,24 +14,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * Business logic for managing a Doctor's weekly availability. This is
- * the data source Step 11's slot-availability calculation reads from.
- */
 @Service
 @RequiredArgsConstructor
 public class DoctorScheduleService {
 
     private final DoctorScheduleRepository scheduleRepository;
     private final ScheduleMapper scheduleMapper;
-    private final DoctorService doctorService; // reused to fetch/validate the owning Doctor
+    private final DoctorService doctorService;
 
     @Transactional(readOnly = true)
     public List<DoctorScheduleResponse> getScheduleByDoctorId(Long doctorId) {
-        // Ensures a 404 if the doctor doesn't exist, rather than silently
-        // returning an empty list for a bad doctorId
         doctorService.findDoctorOrThrow(doctorId);
-
         return scheduleRepository.findByDoctorId(doctorId)
                 .stream()
                 .map(scheduleMapper::toResponse)
@@ -84,20 +77,11 @@ public class DoctorScheduleService {
                 .orElseThrow(() -> new ResourceNotFoundException("DoctorSchedule", scheduleId));
     }
 
-    // Used by @PreAuthorize in the Controller: "does this schedule entry
-    // belong to the currently logged-in doctor?"
     @Transactional(readOnly = true)
     public boolean isScheduleOwner(Long scheduleId, String currentUserEmail) {
         return scheduleRepository.findById(scheduleId)
                 .map(schedule -> schedule.getDoctor().getUser().getEmail().equals(currentUserEmail))
                 .orElse(false);
-    }
-
-    // Used by @PreAuthorize on createSchedule: "is the doctorId in the
-    // request path actually MY doctor id?"
-    @Transactional(readOnly = true)
-    public boolean isDoctorSelf(Long doctorId, String currentUserEmail) {
-        return doctorService.isOwner(doctorId, currentUserEmail);
     }
 
     private void validateTimeRange(DoctorScheduleRequest request) {

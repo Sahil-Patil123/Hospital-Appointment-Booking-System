@@ -29,19 +29,16 @@ public class RegisterRequest {
     @NotNull(message = "Role is required")
     private Role role;
 
-    // ---- Doctor-only fields (required only if role == DOCTOR) ----
     private String specialization;
     private String qualification;
     private Integer yearsOfExperience;
     private Double consultationFee;
 
-    // ---- Patient-only fields (required only if role == PATIENT) ----
-    private String dateOfBirth; // parsed to LocalDate in the Service layer
+    private String dateOfBirth;
     private String gender;
     private String address;
     private String medicalHistory;
 
-    // ---- Shared ----
     @NotBlank(message = "Phone number is required")
     private String phoneNumber;
 }

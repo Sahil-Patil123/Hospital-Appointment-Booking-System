@@ -36,20 +36,13 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
 
-    /**
-     * Registers a new User, and - depending on role - also creates the
-     * linked Doctor or Patient profile row. Returns a JWT immediately so
-     * the client is logged in right after signup, no separate call needed.
-     */
-    @Transactional // if the Doctor/Patient save fails, the User save rolls back too
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email is already registered: " + request.getEmail());
         }
 
-        // Build and save the base User record - password is hashed here,
-        // NEVER stored as plain text
         User user = User.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail())
@@ -59,23 +52,15 @@ public class AuthService {
                 .build();
         user = userRepository.save(user);
 
-        // Role-specific profile creation
         if (request.getRole() == Role.DOCTOR) {
             createDoctorProfile(request, user);
         } else if (request.getRole() == Role.PATIENT) {
             createPatientProfile(request, user);
         }
-        // ADMIN needs no extra profile row - the User record is sufficient
 
         return buildAuthResponse(user);
     }
 
-    /**
-     * Authenticates email+password via Spring Security's AuthenticationManager
-     * (wired in Step 6). If credentials are wrong, this throws
-     * BadCredentialsException automatically - already handled by
-     * GlobalExceptionHandler (Step 5), so no try/catch needed here.
-     */
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -85,7 +70,7 @@ public class AuthService {
 
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalStateException(
-                        "Authenticated user not found in database - this should never happen"));
+                        "Authenticated user not found in database"));
 
         String token = jwtUtil.generateToken(userDetails);
 
@@ -132,7 +117,7 @@ public class AuthService {
 
         LocalDate dateOfBirth;
         try {
-            dateOfBirth = LocalDate.parse(request.getDateOfBirth()); // expects "YYYY-MM-DD"
+            dateOfBirth = LocalDate.parse(request.getDateOfBirth());
         } catch (DateTimeParseException ex) {
             throw new InvalidRequestException("dateOfBirth must be in YYYY-MM-DD format");
         }
@@ -149,7 +134,6 @@ public class AuthService {
         patientRepository.save(patient);
     }
 
-    // Builds the JWT + response DTO for a freshly registered user
     private AuthResponse buildAuthResponse(User user) {
         UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())

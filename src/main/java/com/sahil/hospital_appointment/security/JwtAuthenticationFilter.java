@@ -36,33 +36,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String jwt = authHeader.substring(7); // strip "Bearer " prefix
+        final String jwt = authHeader.substring(7);
         final String userEmail;
 
         try {
             userEmail = jwtUtil.extractEmail(jwt);
         } catch (Exception ex) {
-            // Malformed/expired/tampered token - let the request continue
-            // unauthenticated; the endpoint will reject it with 401/403
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Only authenticate if we found an email AND nothing is already
-        // authenticated in this context (avoids redundant work)
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
             if (jwtUtil.validateToken(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
-                        null, // credentials not needed - token already proves identity
+                        null,
                         userDetails.getAuthorities()
                 );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // This is the critical line: tells Spring Security
-                // "this request is authenticated as this user"
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
